@@ -135,7 +135,8 @@ def exportGcode():
 			        
 			    #if closest vertex is point itself, draw edge				
 			    if (closestDistance == 0):
-			        f.write("G1 X" + str(nextPosition[0]) + " Y" + str(nextPosition[1]) + " Z" + str(nextPosition[2]) + "\n")
+			        moveDirection = getMoveDirections(currPosition, nextPosition)
+			        f.write("G1 X" + str(moveDirection[0]) + " Y" + str(moveDirection[1]) + " Z" + str(moveDirection[2]) + "\n")
 			        currPosition = nextPosition
 			    #else move to point and draw the edge
 			    else:
@@ -145,12 +146,16 @@ def exportGcode():
 			        pp_v2 = cmds.pointPosition(v2, w = True)
 			        
 			        if (nextPosition == pp_v1):
-			            f.write("G0 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
-			            f.write("G1 X" + str(pp_v2[0]) + " Y" + str(pp_v2[1]) + " Z" + str(pp_v2[2]) + "\n")
+			            moveDirection_to_v1 = getMoveDirections(currPosition, pp_v1)
+			            moveDirection_to_v2 = getMoveDirections(pp_v1, pp_v2)
+			            f.write("G0 X" + str(moveDirection_to_v1[0]) + " Y" + str(moveDirection_to_v1[1]) + " Z" + str(moveDirection_to_v1[2]) + "\n")
+			            f.write("G1 X" + str(moveDirection_to_v2[0]) + " Y" + str(moveDirection_to_v2[1]) + " Z" + str(moveDirection_to_v2[2]) + "\n")
 			            currPosition = pp_v2
 			        else:
-			            f.write("G0 X" + str(pp_v2[0]) + " Y" + str(pp_v2[1]) + " Z" + str(pp_v2[2]) + "\n")
-			            f.write("G1 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
+			            moveDirection_to_v2 = getMoveDirections(currPosition, pp_v2)
+			            moveDirection_to_v1 = getMoveDirections(pp_v2, pp_v1)
+			            f.write("G0 X" + str(moveDirection_to_v2[0]) + " Y" + str(moveDirection_to_v2[1]) + " Z" + str(moveDirection_to_v2[2]) + "\n")
+			            f.write("G1 X" + str(moveDirection_to_v1[0]) + " Y" + str(moveDirection_to_v1[1]) + " Z" + str(moveDirection_to_v1[2]) + "\n")
 			            currPosition = pp_v1	
 			
 			#delete the duplicated object

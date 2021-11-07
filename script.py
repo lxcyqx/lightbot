@@ -9,7 +9,7 @@ def getDistance(start, dest):
 	
 def getGeoList(geoList=[]):
 	'''
-	Return a list of geometry transform objects to be used for model checks
+	Return a list of geometry transform objects
 	@param meshList: List of meshes to return as list. If empty, use all non intermediate meshes in the scene
 	@type meshList: list
 	'''
@@ -25,7 +25,110 @@ def getGeoList(geoList=[]):
 	
 	# Return Result
 	return geoList
-	
+
+def processMeshObjects(f, selected, totalEdges, progressControl):
+	currentEdge = 0   # progress bar current value
+
+	#for each mesh object
+	for k in range(0, len(selected)):
+		f.write("iterate mesh object \n")
+		
+		#duplicate the current mesh item
+		newObj = cmds.duplicate(selected[k])
+		
+		cmds.select(newObj)
+		
+		#Convert that object to edges and select them
+		cmds.ConvertSelectionToEdges()
+			
+		#get the number of edges selected
+		numEdges = cmds.polyEvaluate( e=True )
+		edges_nums = list(range(numEdges))
+		
+		currPosition = [0, 0, 0]
+		nextPosition = [0, 0, 0]
+		
+		while len(edges_nums) > 0:
+			closestDistance = float('inf')
+			closestEdgeIndex = 0
+			closest_edge_vertices = []
+					
+			for i in edges_nums:
+
+				#increment how much progress has been made
+				currentEdge += 1
+		
+				#update the progress bar
+				progressInc = cmds.progressBar(progressControl, edit=True, maxValue = totalEdges, pr = currentEdge, vis = True)
+			
+				#get the vertices for current edge
+				vertices = cmds.polyListComponentConversion(str(newObj[0]) + ".e[" + str(i) + "]", fe = True, tv = True)
+				cmds.select(vertices)
+			
+				#store the vertices in an array
+				vertices = cmds.ls(sl = True, fl = True)
+				
+				v1 = vertices[0]
+				v2 = vertices[1]
+				pp_v1 = cmds.pointPosition(v1, w = True)
+				pp_v2 = cmds.pointPosition(v2, w = True)
+				
+				#if the current position is either one of the endpoints of the edge, set the opposite vertex as next position
+				if (currPosition == pp_v1):
+					nextPosition = pp_v2
+					closestEdgeIndex = i
+					closestDistance = 0
+					break
+				elif (currPosition == pp_v2):
+					nextPosition = pp_v1
+					closestEdgeIndex = i
+					closestDistance = 0
+					break
+				#else find the nearest vertex
+				else:		    
+					distance_to_v1 = getDistance(currPosition, pp_v1)
+					distance_to_v2 = getDistance(currPosition, pp_v2)
+					if (distance_to_v1 < closestDistance):
+						closestDistance = distance_to_v1
+						nextPosition = pp_v1
+						closestEdgeIndex = i
+						closest_edge_vertices = vertices
+					if (distance_to_v2 < closestDistance):
+						closestDistance = distance_to_v2
+						nextPosition = pp_v2
+						closestEdgeIndex = i
+						closest_edge_vertices = vertices
+												
+			edges_nums.remove(closestEdgeIndex)
+				
+			#if closest vertex is point itself, draw edge				
+			if (closestDistance == 0):
+				moveDirection = getMoveDirections(currPosition, nextPosition)
+				f.write("G1 X" + str(moveDirection[0]) + " Y" + str(moveDirection[1]) + " Z" + str(moveDirection[2]) + "\n")
+				currPosition = nextPosition
+			#else move to point and draw the edge
+			else:
+				v1 = closest_edge_vertices[0]
+				v2 = closest_edge_vertices[1]
+				pp_v1 = cmds.pointPosition(v1, w = True)
+				pp_v2 = cmds.pointPosition(v2, w = True)
+				
+				if (nextPosition == pp_v1):
+					moveDirection_to_v1 = getMoveDirections(currPosition, pp_v1)
+					moveDirection_to_v2 = getMoveDirections(pp_v1, pp_v2)
+					f.write("G0 X" + str(moveDirection_to_v1[0]) + " Y" + str(moveDirection_to_v1[1]) + " Z" + str(moveDirection_to_v1[2]) + "\n")
+					f.write("G1 X" + str(moveDirection_to_v2[0]) + " Y" + str(moveDirection_to_v2[1]) + " Z" + str(moveDirection_to_v2[2]) + "\n")
+					currPosition = pp_v2
+				else:
+					moveDirection_to_v2 = getMoveDirections(currPosition, pp_v2)
+					moveDirection_to_v1 = getMoveDirections(pp_v2, pp_v1)
+					f.write("G0 X" + str(moveDirection_to_v2[0]) + " Y" + str(moveDirection_to_v2[1]) + " Z" + str(moveDirection_to_v2[2]) + "\n")
+					f.write("G1 X" + str(moveDirection_to_v1[0]) + " Y" + str(moveDirection_to_v1[1]) + " Z" + str(moveDirection_to_v1[2]) + "\n")
+					currPosition = pp_v1	
+		
+		#delete the duplicated object
+		cmds.delete(newObj)
+
 def exportGcode():
 	#grab the selected object(s)	
 	selected = cmds.ls(sl=True)
@@ -50,14 +153,15 @@ def exportGcode():
 	for frame in range(90):
 		geoList = getGeoList([])
 		cmds.select( geoList )
-		selected = cmds.ls(sl=True)
+		nurbs = cmds.ls(type="nurbsCurve")
+		selected = cmds.ls(type="mesh")
 		cmds.currentTime(frame)
 		f.write("new frame \n")
 		
 		#use this for the progress bar
 		totalEdges = 0    #progress bar max value
-		currentEdge = 0   # progress bar current value
-
+		
+		
 		for k in range(0, len(selected)):
 		
 			cmds.select(selected[k])
@@ -80,106 +184,8 @@ def exportGcode():
 			#show window
 			cmds.showWindow(window)
 			
+		processMeshObjects(f, selected, totalEdges, progressControl)	
 		
-		#for each object
-		for k in range(0, len(selected)):
-			f.write("iterate over each object \n")
-			
-			#duplicate the current mesh item
-			newObj = cmds.duplicate(selected[k])
-			
-			cmds.select(newObj)
-			
-			#Convert that object to edges and select them
-			cmds.ConvertSelectionToEdges()
-				
-			#get the number of edges selected
-			numEdges = cmds.polyEvaluate( e=True )
-			edges_nums = list(range(numEdges))
-			
-			currPosition = [0, 0, 0]
-			nextPosition = [0, 0, 0]
-			
-			while len(edges_nums) > 0:
-			    closestDistance = float('inf')
-			    closestEdgeIndex = 0
-			    closest_edge_vertices = []
-						
-			    for i in edges_nums:
-
-			        #increment how much progress has been made
-				    currentEdge += 1
-			
-				    #update the progress bar
-				    progressInc = cmds.progressBar(progressControl, edit=True, maxValue = totalEdges, pr = currentEdge, vis = True)
-				
-				    #get the vertices for current edge
-				    vertices = cmds.polyListComponentConversion(str(newObj[0]) + ".e[" + str(i) + "]", fe = True, tv = True)
-				    cmds.select(vertices)
-				
-				    #store the vertices in an array
-				    vertices = cmds.ls(sl = True, fl = True)
-				    
-				    v1 = vertices[0]
-				    v2 = vertices[1]
-				    pp_v1 = cmds.pointPosition(v1, w = True)
-				    pp_v2 = cmds.pointPosition(v2, w = True)
-				    
-				    #if the current position is either one of the endpoints of the edge, set the opposite vertex as next position
-				    if (currPosition == pp_v1):
-				        nextPosition = pp_v2
-				        closestEdgeIndex = i
-				        closestDistance = 0
-				        break
-				    elif (currPosition == pp_v2):
-				        nextPosition = pp_v1
-				        closestEdgeIndex = i
-				        closestDistance = 0
-				        break
-				    #else find the nearest vertex
-				    else:		    
-				        distance_to_v1 = getDistance(currPosition, pp_v1)
-				        distance_to_v2 = getDistance(currPosition, pp_v2)
-				        if (distance_to_v1 < closestDistance):
-				            closestDistance = distance_to_v1
-				            nextPosition = pp_v1
-				            closestEdgeIndex = i
-				            closest_edge_vertices = vertices
-				        if (distance_to_v2 < closestDistance):
-				            closestDistance = distance_to_v2
-				            nextPosition = pp_v2
-				            closestEdgeIndex = i
-				            closest_edge_vertices = vertices
-				        				            
-			    edges_nums.remove(closestEdgeIndex)
-			        
-			    #if closest vertex is point itself, draw edge				
-			    if (closestDistance == 0):
-			        moveDirection = getMoveDirections(currPosition, nextPosition)
-			        f.write("G1 X" + str(moveDirection[0]) + " Y" + str(moveDirection[1]) + " Z" + str(moveDirection[2]) + "\n")
-			        currPosition = nextPosition
-			    #else move to point and draw the edge
-			    else:
-			        v1 = closest_edge_vertices[0]
-			        v2 = closest_edge_vertices[1]
-			        pp_v1 = cmds.pointPosition(v1, w = True)
-			        pp_v2 = cmds.pointPosition(v2, w = True)
-			        
-			        if (nextPosition == pp_v1):
-			            moveDirection_to_v1 = getMoveDirections(currPosition, pp_v1)
-			            moveDirection_to_v2 = getMoveDirections(pp_v1, pp_v2)
-			            f.write("G0 X" + str(moveDirection_to_v1[0]) + " Y" + str(moveDirection_to_v1[1]) + " Z" + str(moveDirection_to_v1[2]) + "\n")
-			            f.write("G1 X" + str(moveDirection_to_v2[0]) + " Y" + str(moveDirection_to_v2[1]) + " Z" + str(moveDirection_to_v2[2]) + "\n")
-			            currPosition = pp_v2
-			        else:
-			            moveDirection_to_v2 = getMoveDirections(currPosition, pp_v2)
-			            moveDirection_to_v1 = getMoveDirections(pp_v2, pp_v1)
-			            f.write("G0 X" + str(moveDirection_to_v2[0]) + " Y" + str(moveDirection_to_v2[1]) + " Z" + str(moveDirection_to_v2[2]) + "\n")
-			            f.write("G1 X" + str(moveDirection_to_v1[0]) + " Y" + str(moveDirection_to_v1[1]) + " Z" + str(moveDirection_to_v1[2]) + "\n")
-			            currPosition = pp_v1	
-			
-			#delete the duplicated object
-			cmds.delete(newObj)
 		
 	#close the file	
 	f.close()

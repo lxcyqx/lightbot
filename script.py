@@ -6,7 +6,26 @@ def getMoveDirections(start, dest):
 	
 def getDistance(start, dest):
     return math.sqrt((abs(start[0] - dest[0]))**2 + (abs(start[1] - dest[1]))**2 + (abs(start[2] - dest[2]))**2)
-
+	
+def getGeoList(geoList=[]):
+	'''
+	Return a list of geometry transform objects to be used for model checks
+	@param meshList: List of meshes to return as list. If empty, use all non intermediate meshes in the scene
+	@type meshList: list
+	'''
+	# Check Geo List
+	if not geoList:
+		geoList = [cmds.listRelatives(i,p=True,pa=True)[0] for i in cmds.ls(geometry=True,ni=True) or []]
+	else:
+		geoList = [geo for geo in geoList if glTools.utils.geometry.isGeometry(geo)]
+	if not geoList: return []
+	
+	# Remove Duplicates
+	geoList = list(set(geoList))
+	
+	# Return Result
+	return geoList
+	
 def exportGcode():
 	#grab the selected object(s)	
 	selected = cmds.ls(sl=True)
@@ -26,10 +45,11 @@ def exportGcode():
 		#open a file at the filename specified	
 		f = open(str(filename), 'w')
 
-		f.write("F20000")
+		f.write("F20000 \n")
 	
 	for frame in range(90):
-		cmds.select( 'pCube23' )
+		geoList = getGeoList([])
+		cmds.select( geoList )
 		selected = cmds.ls(sl=True)
 		cmds.currentTime(frame)
 		f.write("new frame \n")

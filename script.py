@@ -30,13 +30,10 @@ def getGeoList(geoList=[]):
 # Divides curve into segments.
 def eqDistanceCurveDivide(f, curvename, segmentcurveLength):
 	uValeStart = 0.0
- 
 	curveLength = cmds.arclen(curvename)
-	kk = (int(curveLength/segmentcurveLength))
- 
-	intCL = int(curveLength)
+	kk = (int(curveLength / segmentcurveLength))
+	intCL = int(math.ceil(curveLength))
 	accur = 100 * intCL
- 
 	uVale = 1.0 / accur
  
 	for t in range(kk):
@@ -69,7 +66,7 @@ def processNurbs(f, nurbs):
 	for k in range(len(nurbs)):
 		newObj = cmds.duplicate(nurbs[k])
 		cmds.select(newObj)
-		eqDistanceCurveDivide(f, newObj, .5)
+		eqDistanceCurveDivide(f, newObj, .2)
 		#delete the duplicated object
 		cmds.delete(newObj)
 
@@ -194,7 +191,7 @@ def exportGcode():
 
 		f.write("F20000 \n")
 	
-	for frame in range(90):
+	for frame in range(1):
 		geoList = getGeoList([])
 		cmds.select( geoList )
 		nurbs = cmds.ls(type="nurbsCurve")

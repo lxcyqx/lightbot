@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import math
+import maya.OpenMaya as om
 
 def getMoveDirections(start, dest):
 	return [dest[0] - start[0], dest[1] - start[1], dest[2] - start[0]]
@@ -26,7 +27,53 @@ def getGeoList(geoList=[]):
 	# Return Result
 	return geoList
 
-def processMeshObjects(f, selected, totalEdges, progressControl):
+# Divides curve into segments.
+def eqDistanceCurveDivide(f, curvename, segmentcurveLength):
+	uValeStart = 0.0
+ 
+	curveLength = cmds.arclen(curvename)
+	kk = (int(curveLength/segmentcurveLength))
+ 
+	intCL = int(curveLength)
+	accur = 100 * intCL
+ 
+	uVale = 1.0 / accur
+ 
+	for t in range(kk):
+		for i in range(accur):
+ 
+			pointA = cmds.pointOnCurve(curvename, top=True, pr=uValeStart, p=True )
+			vecA = om.MVector(pointA[0], pointA[1], pointA[2])
+			pointB = cmds.pointOnCurve(curvename, top=True, pr=uVale, p=True)
+			vecB = om.MVector(pointB[0], pointB[1], pointB[2])
+ 
+			vecC = om.MVector()
+			vecC = (vecB - vecA)
+			distance = vecC.length()
+ 
+			if distance < segmentcurveLength:
+				uVale += 1.0 / accur
+			else:
+				uValeStart = uVale
+				break
+
+		if (t is 0):
+			f.write("G0 X" + str(pointB[0]) + " Y" + str(pointB[1]) + " Z" + str(pointB[2]) + "\n")		
+		else:	
+			f.write("G1 X" + str(pointB[0]) + " Y" + str(pointB[1]) + " Z" + str(pointB[2]) + "\n")
+ 
+		if uValeStart >= 0.99:
+			break
+
+def processNurbs(f, nurbs):
+	for k in range(len(nurbs)):
+		newObj = cmds.duplicate(nurbs[k])
+		cmds.select(newObj)
+		eqDistanceCurveDivide(f, newObj, .5)
+		#delete the duplicated object
+		cmds.delete(newObj)
+
+def processMeshObjects(f, selected):
 	currentEdge = 0   # progress bar current value
 
 	#for each mesh object
@@ -57,9 +104,6 @@ def processMeshObjects(f, selected, totalEdges, progressControl):
 
 				#increment how much progress has been made
 				currentEdge += 1
-		
-				#update the progress bar
-				progressInc = cmds.progressBar(progressControl, edit=True, maxValue = totalEdges, pr = currentEdge, vis = True)
 			
 				#get the vertices for current edge
 				vertices = cmds.polyListComponentConversion(str(newObj[0]) + ".e[" + str(i) + "]", fe = True, tv = True)
@@ -157,41 +201,13 @@ def exportGcode():
 		selected = cmds.ls(type="mesh")
 		cmds.currentTime(frame)
 		f.write("new frame \n")
-		
-		#use this for the progress bar
-		totalEdges = 0    #progress bar max value
-		
-		
-		for k in range(0, len(selected)):
-		
-			cmds.select(selected[k])
 			
-			#Convert that object to edges and select them
-			cmds.ConvertSelectionToEdges()
-			
-			#get the number of edges for that object
-			totalEdges += int(cmds.polyEvaluate(e=True))
-		
-			if(cmds.window("ExportGcode", ex = True)):
-				cmds.deleteUI("ExportGcode")
-			
-			window = cmds.window("ExportGcode", title="ExportGcode", width=100, height=130, s = False)
-			cmds.columnLayout( columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
-			
-			#create progress bar
-			progressControl = cmds.progressBar(maxValue=100, width=100, vis = False)
-			
-			#show window
-			cmds.showWindow(window)
-			
-		processMeshObjects(f, selected, totalEdges, progressControl)	
+		processMeshObjects(f, selected)	
+		processNurbs(f, nurbs)
 		
 		
 	#close the file	
 	f.close()
-		
-	#remove the progress window
-	#cmds.deleteUI("ExportGcode")
 		
 	#let the user know it's done
 	cmds.headsUpMessage(str(filename) + " created.")

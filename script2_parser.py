@@ -2,19 +2,17 @@ import re
 import math
 import numpy as np
 
-P1 = [10, 0, 200]
-P2 = [0, -10, 200]
-P3 = [0, 10*math.sqrt(10), 200]
-height = 50 # frame coordinates for home is [0,0,50]
-home = [0, 0, 0] # in cartesian coordinates
-a0 = 0
-b0 = 0
-c0 = 0
+P1 = [0, 1, 20]
+P2 = [math.sqrt(3)/2.0, -0.5, 20]
+P3 = [-math.sqrt(3)/2.0, -0.5, 20]
+height = 10 # frame coordinates for home is [0,0,50]
+home = [0, 0, 10] # in cartesian coordinates
 
-def setHomeInFrameCoordinates():
+def getHomeInFrameCoordinates():
     a0 = getEuclideanDistance(home, P1)
     b0 = getEuclideanDistance(home, P2)
     c0 = getEuclideanDistance(home, P3)
+    return a0, b0, c0
 
 def getEuclideanDistance(P1, P2):
     # convert strings to float
@@ -54,23 +52,38 @@ def getSegments(P1, P2):
     return segments
 
 def parseGCode():
-    setHomeInFrameCoordinates()
+    a0, b0, c0 = getHomeInFrameCoordinates()
+    print("home------", a0, b0, c0)
     with open('cube72.gcode') as gcode:
         f = open(str("gcode_data.gcode"), 'w')
 
+        prev_line = None
         for line in gcode:
-            split = line.split()
-            if (len(split) == 1): # G1 or G0 command
-                f.write(split[0] + '\n')
-            else:
-                numbers = re.findall(r"[-+]?\d*\.\d+|\d+", line)
-                if (len(numbers) > 0):
-                    print(numbers)
-                    G = numbers[0]
-                    point = [numbers[1], numbers[2], numbers[3]]
-                    A = getEuclideanDistance(P1, point) - a0
-                    B = getEuclideanDistance(P2, point) - b0
-                    C = getEuclideanDistance(P3, point) - c0
-                    f.write("G" + str(G) +  " A" + str(A) + " B" + str(B) + " C" + str(C) + "\n")
+            if prev_line is not None:
+                split = line.split()
+                if (len(split) == 1): # G1 or G0 command
+                    f.write(split[0] + '\n')
+                else:
+                    prev_numbers = re.findall(r"[-+]?\d*\.\d+|\d+", prev_line)
+                    curr_numbers = re.findall(r"[-+]?\d*\.\d+|\d+", line)
+                    if (len(curr_numbers) > 0 and len(prev_numbers) > 0):
+                        prev_G = int(prev_numbers[0])
+                        curr_G = int(curr_numbers[0])
+                        segments = []
+                        print(prev_numbers, curr_numbers)
+                        if ((prev_G == 0 and curr_G == 1) or (prev_G == 1 and curr_G == 1)):
+                            segments = getSegments(prev_numbers[1:], curr_numbers[1:]) # exclude the first number because that's G
+
+                        print("segments: ")
+                        for i in range(len(segments)):
+                            point = segments[i]
+                            print(point)
+                            print("home------", a0, b0, c0)
+                            A = getEuclideanDistance(P1, point) - a0
+                            B = getEuclideanDistance(P2, point) - b0
+                            C = getEuclideanDistance(P3, point) - c0
+                            print(A, B, C)
+                            # f.write("G" + str(G) +  " A" + str(A) + " B" + str(B) + " C" + str(C) + "\n")
+            prev_line = line
 
 parseGCode()

@@ -53,15 +53,14 @@ def getSegments(P1, P2):
 
 def parseGCode():
     a0, b0, c0 = getHomeInFrameCoordinates()
-    print("home------", a0, b0, c0)
     with open('cube72.gcode') as gcode:
         f = open(str("gcode_data.gcode"), 'w')
 
         prev_line = None
         for line in gcode:
             if prev_line is not None:
-                split = line.split()
-                if (len(split) == 1): # G1 or G0 command
+                split = prev_line.split()
+                if (len(split) == 1):
                     f.write(split[0] + '\n')
                 else:
                     prev_numbers = re.findall(r"[-+]?\d*\.\d+|\d+", prev_line)
@@ -70,20 +69,18 @@ def parseGCode():
                         prev_G = int(prev_numbers[0])
                         curr_G = int(curr_numbers[0])
                         segments = []
-                        print(prev_numbers, curr_numbers)
                         if ((prev_G == 0 and curr_G == 1) or (prev_G == 1 and curr_G == 1)):
                             segments = getSegments(prev_numbers[1:], curr_numbers[1:]) # exclude the first number because that's G
 
-                        print("segments: ")
                         for i in range(len(segments)):
                             point = segments[i]
-                            print(point)
-                            print("home------", a0, b0, c0)
                             A = getEuclideanDistance(P1, point) - a0
                             B = getEuclideanDistance(P2, point) - b0
                             C = getEuclideanDistance(P3, point) - c0
-                            print(A, B, C)
-                            # f.write("G" + str(G) +  " A" + str(A) + " B" + str(B) + " C" + str(C) + "\n")
+                            if i == 0:
+                                f.write("G" + str(prev_G) +  " A" + str(A) + " B" + str(B) + " C" + str(C) + "\n")
+                            else:
+                                f.write("G" + str(curr_G) +  " A" + str(A) + " B" + str(B) + " C" + str(C) + "\n")
             prev_line = line
 
 parseGCode()

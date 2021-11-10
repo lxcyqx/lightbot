@@ -7,17 +7,21 @@ P2 = [0, -10, 200]
 P3 = [0, 10*math.sqrt(10), 200]
 height = 50 # frame coordinates for home is [0,0,50]
 home = [0, 0, 0] # in cartesian coordinates
-# we also want home in cartesian so we can find the lengths of the line
 a0 = 0
 b0 = 0
-b0 = 0
+c0 = 0
 
-def setHome():
+def setHomeInFrameCoordinates():
     a0 = getEuclideanDistance(home, P1)
     b0 = getEuclideanDistance(home, P2)
     c0 = getEuclideanDistance(home, P3)
 
 def getEuclideanDistance(P1, P2):
+    # convert strings to float
+    for i in range(len(P1)):
+        P1[i] = float(P1[i])
+    for i in range(len(P2)):
+        P2[i] = float(P2[i])
     return math.sqrt((P2[0]-P1[0])**2 + (P2[1]-P1[1])**2 + (P2[2]-P1[2])**2)
 
 def getSegments(P1, P2):
@@ -49,15 +53,8 @@ def getSegments(P1, P2):
 
     return segments
 
-
-def getFrameCoordinates(X, Y, Z):
-    line1 = math.sqrt((P1[0]-X)**2 + (P1[1]-Y)**2 + (P1[2]-Z)**2) - home[0]
-    line2 = math.sqrt((P2[0]-X)**2 + (P2[1]-Y)**2 + (P3[2]-Z)**2) - home[1]
-    line3 = math.sqrt((P3[0]-X)**2 + (P2[1]-Y)**2 + (P3[2]-Z)**2) - home[2]
-    print(line1, line2, line3)
-    return line1, line2, line3
-
 def parseGCode():
+    setHomeInFrameCoordinates()
     with open('cube72.gcode') as gcode:
         f = open(str("gcode_data.gcode"), 'w')
 
@@ -68,12 +65,12 @@ def parseGCode():
             else:
                 numbers = re.findall(r"[-+]?\d*\.\d+|\d+", line)
                 if (len(numbers) > 0):
+                    print(numbers)
                     G = numbers[0]
-                    X = numbers[1]
-                    Y = numbers[2]
-                    Z = numbers[3]
-                    getFrameCoordinates(X, Y, Z)
-                    f.write("G" + str(G) +  " A" + str(X) + " B" + str(Y) + " C" + str(Z) + "\n")
+                    point = [numbers[1], numbers[2], numbers[3]]
+                    A = getEuclideanDistance(P1, point) - a0
+                    B = getEuclideanDistance(P2, point) - b0
+                    C = getEuclideanDistance(P3, point) - c0
+                    f.write("G" + str(G) +  " A" + str(A) + " B" + str(B) + " C" + str(C) + "\n")
 
-# parseGCode()
-getSegments([0,0,0], [5,5,5])
+parseGCode()

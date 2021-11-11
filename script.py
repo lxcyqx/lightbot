@@ -53,6 +53,9 @@ def eqDistanceCurveDivide(f, curvename, segmentcurveLength):
 			else:
 				uValeStart = uVale
 				break
+		
+		# convert centimeters to millimeters
+		pointB = [x * 10 for x in pointB]
 
 		if (t is 0):
 			f.write("G0 X" + str(pointB[0]) + " Y" + str(pointB[1]) + " Z" + str(pointB[2]) + "\n")		
@@ -75,7 +78,6 @@ def processMeshObjects(f, selected):
 
 	#for each mesh object
 	for k in range(0, len(selected)):
-		f.write("iterate mesh object \n")
 		
 		#duplicate the current mesh item
 		newObj = cmds.duplicate(selected[k])
@@ -152,6 +154,9 @@ def processMeshObjects(f, selected):
 				v2 = closest_edge_vertices[1]
 				pp_v1 = cmds.pointPosition(v1, w = True)
 				pp_v2 = cmds.pointPosition(v2, w = True)
+
+				pp_v1 = [x * 10 for x in pp_v1]
+				pp_v2 = [x * 10 for x in pp_v2]
 				
 				if (nextPosition == pp_v1):
 					f.write("G0 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
@@ -188,7 +193,7 @@ def exportGcode():
 		f.write("G1 F20000 \n")
 		
 	
-	for frame in range(1):
+	for frame in range(15):
 		geoList = getGeoList([])
 		cmds.select( geoList )
 		nurbs = cmds.ls(type="nurbsCurve")

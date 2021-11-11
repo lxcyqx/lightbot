@@ -20,6 +20,7 @@ def getEuclideanDistance(P1, P2):
         P1[i] = float(P1[i])
     for i in range(len(P2)):
         P2[i] = float(P2[i])
+    print(P1, P2)
     return math.sqrt((P2[0]-P1[0])**2 + (P2[1]-P1[1])**2 + (P2[2]-P1[2])**2)
 
 def getSegments(P1, P2):
@@ -53,22 +54,25 @@ def getSegments(P1, P2):
 
 def parseGCode():
     a0, b0, c0 = getHomeInFrameCoordinates()
-    with open('cube72.gcode') as gcode:
+    with open('camera.gcode') as gcode:
         f = open(str("gcode_data.gcode"), 'w')
 
         prev_line = None
         for line in gcode:
             if prev_line is not None:
                 split = prev_line.split()
-                if (len(split) == 1):
-                    f.write(split[0] + '\n')
+
+                prev_numbers = re.findall(r"[-+]?\d*\.\d+|\d+", prev_line)
+                curr_numbers = re.findall(r"[-+]?\d*\.\d+|\d+", line)
+
+                if (len(prev_numbers) == 2): # for F command
+                    f.write(split[0] + " " + split[1] + '\n')
                 else:
-                    prev_numbers = re.findall(r"[-+]?\d*\.\d+|\d+", prev_line)
-                    curr_numbers = re.findall(r"[-+]?\d*\.\d+|\d+", line)
-                    if (len(curr_numbers) > 0 and len(prev_numbers) > 0):
+                    if (len(curr_numbers) > 3 and len(prev_numbers) > 3):
                         prev_G = int(prev_numbers[0])
                         curr_G = int(curr_numbers[0])
                         segments = []
+                        # only want to segment lines, not travel moves
                         if ((prev_G == 0 and curr_G == 1) or (prev_G == 1 and curr_G == 1)):
                             segments = getSegments(prev_numbers[1:], curr_numbers[1:]) # exclude the first number because that's G
 

@@ -1,6 +1,7 @@
 import re 
 import math
 import numpy as np
+import sys
 
 P1 = [-170, -99, 150]
 P2 = [0, 196.3, 150]
@@ -51,10 +52,10 @@ def getSegments(P1, P2):
 
     return segments
 
-def parseGCode():
+def parseGCode(filename, output_filename):
     a0, b0, c0 = getHomeInFrameCoordinates()
-    with open('cube.gcode') as gcode:
-        f = open(str("gcode_data.gcode"), 'w')
+    with open(filename) as gcode:
+        f = open(output_filename, 'w')
 
         prev_line = None
         for line in gcode:
@@ -87,12 +88,13 @@ def parseGCode():
             prev_line = line
 
 def main():
-    if len(sys.argv) != 2 or sys.argv[1] not in {"RNN","TRANSFORMER"}:
-			print("USAGE: python2 script.py <Model Type>")
-			print("<Model Type>: [RNN/TRANSFORMER]")
-			exit()
-    parseGCode()
-
+    if len(sys.argv) != 2:
+        print("USAGE: python2 gcode_parser.py <file>")
+        exit()
+    else:
+        filename = sys.argv[1]
+        output_filename = "gcode_data.gcode"
+        parseGCode(filename, output_filename)
 
 if __name__ == '__main__':
 	main()

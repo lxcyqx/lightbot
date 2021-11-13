@@ -193,7 +193,7 @@ def exportGcode():
 		f.write("G1 F20000 \n")
 		
 	
-	for frame in range(15):
+	for frame in range(9):
 		geoList = getGeoList([])
 		cmds.select( geoList )
 		nurbs = cmds.ls(type="nurbsCurve")

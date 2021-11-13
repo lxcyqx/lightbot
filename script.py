@@ -55,12 +55,12 @@ def eqDistanceCurveDivide(f, curvename, segmentcurveLength):
 				break
 		
 		# convert centimeters to millimeters
-		pointB = [x * 10 for x in pointB]
+		pointB_mm = [x * 10 for x in pointB]
 
 		if (t is 0):
-			f.write("G0 X" + str(pointB[0]) + " Y" + str(pointB[1]) + " Z" + str(pointB[2]) + "\n")		
+			f.write("G0 X" + str(pointB_mm[0]) + " Y" + str(pointB_mm[1]) + " Z" + str(pointB_mm[2]) + "\n")		
 		else:	
-			f.write("G1 X" + str(pointB[0]) + " Y" + str(pointB[1]) + " Z" + str(pointB[2]) + "\n")
+			f.write("G1 X" + str(pointB_mm[0]) + " Y" + str(pointB_mm[1]) + " Z" + str(pointB_mm[2]) + "\n")
  
 		if uValeStart >= 0.99:
 			break
@@ -78,6 +78,7 @@ def processMeshObjects(f, selected):
 
 	#for each mesh object
 	for k in range(0, len(selected)):
+		f.write("iterate mesh object \n")
 		
 		#duplicate the current mesh item
 		newObj = cmds.duplicate(selected[k])
@@ -155,16 +156,16 @@ def processMeshObjects(f, selected):
 				pp_v1 = cmds.pointPosition(v1, w = True)
 				pp_v2 = cmds.pointPosition(v2, w = True)
 
-				pp_v1 = [x * 10 for x in pp_v1]
-				pp_v2 = [x * 10 for x in pp_v2]
+				pp_v1_mm = [x * 10 for x in pp_v1] #convert centimeters to millimeters
+				pp_v2_mm = [x * 10 for x in pp_v2]
 				
 				if (nextPosition == pp_v1):
-					f.write("G0 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
-					f.write("G1 X" + str(pp_v2[0]) + " Y" + str(pp_v2[1]) + " Z" + str(pp_v2[2]) + "\n")
+					f.write("G0 X" + str(pp_v1_mm[0]) + " Y" + str(pp_v1_mm[1]) + " Z" + str(pp_v1_mm[2]) + "\n")
+					f.write("G1 X" + str(pp_v2_mm[0]) + " Y" + str(pp_v2_mm[1]) + " Z" + str(pp_v2_mm[2]) + "\n")
 					currPosition = pp_v2
 				else:
-					f.write("G0 X" + str(pp_v2[0]) + " Y" + str(pp_v2[1]) + " Z" + str(pp_v2[2]) + "\n")
-					f.write("G1 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
+					f.write("G0 X" + str(pp_v2_mm[0]) + " Y" + str(pp_v2_mm[1]) + " Z" + str(pp_v2_mm[2]) + "\n")
+					f.write("G1 X" + str(pp_v1_mm[0]) + " Y" + str(pp_v1_mm[1]) + " Z" + str(pp_v1_mm[2]) + "\n")
 					currPosition = pp_v1	
 		
 		#delete the duplicated object
@@ -193,7 +194,7 @@ def exportGcode():
 		f.write("G1 F20000 \n")
 		
 	
-	for frame in range(9):
+	for frame in range(1):
 		geoList = getGeoList([])
 		cmds.select( geoList )
 		nurbs = cmds.ls(type="nurbsCurve")

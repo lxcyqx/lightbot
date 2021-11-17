@@ -6,7 +6,6 @@ import sys
 P1 = [-170, -99, 150]
 P2 = [0, 196.3, 150]
 P3 = [170, -99, 150]
-height = 10 # frame coordinates for home is [0,0,50]
 home = [0, 0, 150] # in cartesian coordinates
 
 def getHomeInFrameCoordinates():

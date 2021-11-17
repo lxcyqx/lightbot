@@ -88,12 +88,12 @@ def parseGCode(filename, output_filename):
             prev_line = line
 
 def main():
-    if len(sys.argv) != 2:
-        print("USAGE: python2 gcode_parser.py <file>")
+    if len(sys.argv) != 3:
+        print("USAGE: python2 gcode_parser.py <input filename> <output filename>")
         exit()
     else:
         filename = sys.argv[1]
-        output_filename = "gcode_data.gcode"
+        output_filename = sys.argv[2]
         parseGCode(filename, output_filename)
 
 if __name__ == '__main__':

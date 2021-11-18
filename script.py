@@ -57,9 +57,8 @@ def eqDistanceCurveDivide(f, curvename, segmentcurveLength):
 				break
 		
 		for i in range(len(pointB)):
-			print(pointB[i])
-			if (pointB[i] < epsilon and pointB[i] > -1 * epsilon):
-				print("less than epsilon")
+			pointB[i] = round(pointB[i], 2) # round to 2 decimal places
+			if (pointB[i] < epsilon and pointB[i] > -1 * epsilon): # smooth out z that are near 0
 				pointB[i] = 0
 
 		if (t is 0):
@@ -148,13 +147,13 @@ def processMeshObjects(f, selected):
 			edges_nums.remove(closestEdgeIndex)
 			
 			for i in range(len(pp_v1)):
-					print(pp_v1[i])
-					if (pp_v1[i] < epsilon and pp_v1[i] > -1 * epsilon):
-						print("less than epsilon")
-						pp_v1[i] = 0
+				pp_v1[i] = round(pp_v1[i], 2) # round to 2 decimal places
+				if (pp_v1[i] < epsilon and pp_v1[i] > -1 * epsilon):
+					pp_v1[i] = 0
 				
 			for i in range(len(pp_v2)):
-				if (pp_v1[i] < epsilon and pp_v1[i] > -1 * epsilon):
+				pp_v2[i] = round(pp_v2[i], 2) # round to 2 decimal places
+				if (pp_v2[i] < epsilon and pp_v2[i] > -1 * epsilon):
 					pp_v2[i] = 0
 
 			#if closest vertex is point itself, draw edge				
@@ -167,7 +166,6 @@ def processMeshObjects(f, selected):
 				v2 = closest_edge_vertices[1]
 				pp_v1 = cmds.pointPosition(v1, w = True)
 				pp_v2 = cmds.pointPosition(v2, w = True)
-				print("before for loop")
 
 				if (nextPosition == pp_v1):
 					f.write("G0 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
@@ -211,10 +209,6 @@ def exportGcode():
 		selected = cmds.ls(type="mesh", visible=True)
 		cmds.currentTime(frame)
 		f.write("new frame \n")
-
-		print(" geolist ", len(geoList))
-		print(" mesh ", len(selected))
-		print(" nurbs ", len(nurbs))
 			
 		processMeshObjects(f, selected)	
 		processNurbs(f, nurbs)

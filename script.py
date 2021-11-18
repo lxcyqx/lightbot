@@ -145,16 +145,6 @@ def processMeshObjects(f, selected):
 						closest_edge_vertices = vertices
 												
 			edges_nums.remove(closestEdgeIndex)
-			
-			for i in range(len(pp_v1)):
-				pp_v1[i] = round(pp_v1[i], 2) # round to 2 decimal places
-				if (pp_v1[i] < epsilon and pp_v1[i] > -1 * epsilon):
-					pp_v1[i] = 0
-				
-			for i in range(len(pp_v2)):
-				pp_v2[i] = round(pp_v2[i], 2) # round to 2 decimal places
-				if (pp_v2[i] < epsilon and pp_v2[i] > -1 * epsilon):
-					pp_v2[i] = 0
 
 			#if closest vertex is point itself, draw edge				
 			if (closestDistance == 0):

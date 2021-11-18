@@ -2,6 +2,8 @@ import maya.cmds as cmds
 import math
 import maya.OpenMaya as om
 
+epsilon = 3e-10
+
 def getMoveDirections(start, dest):
 	return [dest[0] - start[0], dest[1] - start[1], dest[2] - start[0]]
 	
@@ -16,7 +18,7 @@ def getGeoList(geoList=[]):
 	'''
 	# Check Geo List
 	if not geoList:
-		geoList = [cmds.listRelatives(i,p=True,pa=True)[0] for i in cmds.ls(geometry=True,ni=True) or []]
+		geoList = [cmds.listRelatives(i,p=True,pa=True)[0] for i in cmds.ls(geometry=True, ni=True, visible=True) or []]
 	else:
 		geoList = [geo for geo in geoList if glTools.utils.geometry.isGeometry(geo)]
 	if not geoList: return []
@@ -53,6 +55,12 @@ def eqDistanceCurveDivide(f, curvename, segmentcurveLength):
 			else:
 				uValeStart = uVale
 				break
+		
+		for i in range(len(pointB)):
+			print(pointB[i])
+			if (pointB[i] < epsilon and pointB[i] > -1 * epsilon):
+				print("less than epsilon")
+				pointB[i] = 0
 
 		if (t is 0):
 			f.write("G0 X" + str(pointB[0]) + " Y" + str(pointB[1]) + " Z" + str(pointB[2]) + "\n")		
@@ -64,6 +72,7 @@ def eqDistanceCurveDivide(f, curvename, segmentcurveLength):
 
 def processNurbs(f, nurbs):
 	for k in range(len(nurbs)):
+		f.write("iterate nurbs \n")
 		newObj = cmds.duplicate(nurbs[k])
 		cmds.select(newObj)
 		eqDistanceCurveDivide(f, newObj, .2)
@@ -71,7 +80,6 @@ def processNurbs(f, nurbs):
 		cmds.delete(newObj)
 
 def processMeshObjects(f, selected):
-	currentEdge = 0   # progress bar current value
 
 	#for each mesh object
 	for k in range(0, len(selected)):
@@ -98,9 +106,6 @@ def processMeshObjects(f, selected):
 			closest_edge_vertices = []
 					
 			for i in edges_nums:
-
-				#increment how much progress has been made
-				currentEdge += 1
 			
 				#get the vertices for current edge
 				vertices = cmds.polyListComponentConversion(str(newObj[0]) + ".e[" + str(i) + "]", fe = True, tv = True)
@@ -141,7 +146,17 @@ def processMeshObjects(f, selected):
 						closest_edge_vertices = vertices
 												
 			edges_nums.remove(closestEdgeIndex)
+			
+			for i in range(len(pp_v1)):
+					print(pp_v1[i])
+					if (pp_v1[i] < epsilon and pp_v1[i] > -1 * epsilon):
+						print("less than epsilon")
+						pp_v1[i] = 0
 				
+			for i in range(len(pp_v2)):
+				if (pp_v1[i] < epsilon and pp_v1[i] > -1 * epsilon):
+					pp_v2[i] = 0
+
 			#if closest vertex is point itself, draw edge				
 			if (closestDistance == 0):
 				f.write("G1 X" + str(nextPosition[0]) + " Y" + str(nextPosition[1]) + " Z" + str(nextPosition[2]) + "\n")
@@ -152,7 +167,8 @@ def processMeshObjects(f, selected):
 				v2 = closest_edge_vertices[1]
 				pp_v1 = cmds.pointPosition(v1, w = True)
 				pp_v2 = cmds.pointPosition(v2, w = True)
-				
+				print("before for loop")
+
 				if (nextPosition == pp_v1):
 					f.write("G0 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
 					f.write("G1 X" + str(pp_v2[0]) + " Y" + str(pp_v2[1]) + " Z" + str(pp_v2[2]) + "\n")
@@ -191,10 +207,14 @@ def exportGcode():
 	for frame in range(1):
 		geoList = getGeoList([])
 		cmds.select( geoList )
-		nurbs = cmds.ls(type="nurbsCurve")
-		selected = cmds.ls(type="mesh")
+		nurbs = cmds.ls(type="nurbsCurve", visible=True)
+		selected = cmds.ls(type="mesh", visible=True)
 		cmds.currentTime(frame)
 		f.write("new frame \n")
+
+		print(" geolist ", len(geoList))
+		print(" mesh ", len(selected))
+		print(" nurbs ", len(nurbs))
 			
 		processMeshObjects(f, selected)	
 		processNurbs(f, nurbs)

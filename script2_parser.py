@@ -55,7 +55,7 @@ def getSegments(P1, P2):
 def parseGCode(args):
     a0, b0, c0 = getHomeInFrameCoordinates()
     with open(args[1]) as gcode:
-        f = open(str("gcode_data.gcode"), 'w')
+        f = open(args[2], 'w')
 
         prev_line = None
         for line in gcode:
@@ -88,8 +88,8 @@ def parseGCode(args):
             prev_line = line
 
 def main():
-    if len(sys.argv) != 2:
-        print("USAGE: python3 script.py <filename>")
+    if len(sys.argv) != 3:
+        print("USAGE: python3 script.py <input filename> <output filename>")
         exit()
     parseGCode(sys.argv)
 

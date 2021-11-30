@@ -79,6 +79,7 @@ def processNurbs(f, nurbs):
 		cmds.delete(newObj)
 
 def processMeshObjects(f, selected):
+	currentEdge = 0   # progress bar current value
 
 	#for each mesh object
 	for k in range(0, len(selected)):
@@ -105,6 +106,9 @@ def processMeshObjects(f, selected):
 			closest_edge_vertices = []
 					
 			for i in edges_nums:
+
+				#increment how much progress has been made
+				currentEdge += 1
 			
 				#get the vertices for current edge
 				vertices = cmds.polyListComponentConversion(str(newObj[0]) + ".e[" + str(i) + "]", fe = True, tv = True)
@@ -145,7 +149,7 @@ def processMeshObjects(f, selected):
 						closest_edge_vertices = vertices
 												
 			edges_nums.remove(closestEdgeIndex)
-
+				
 			#if closest vertex is point itself, draw edge				
 			if (closestDistance == 0):
 				f.write("G1 X" + str(nextPosition[0]) + " Y" + str(nextPosition[1]) + " Z" + str(nextPosition[2]) + "\n")
@@ -156,7 +160,7 @@ def processMeshObjects(f, selected):
 				v2 = closest_edge_vertices[1]
 				pp_v1 = cmds.pointPosition(v1, w = True)
 				pp_v2 = cmds.pointPosition(v2, w = True)
-
+				
 				if (nextPosition == pp_v1):
 					f.write("G0 X" + str(pp_v1[0]) + " Y" + str(pp_v1[1]) + " Z" + str(pp_v1[2]) + "\n")
 					f.write("G1 X" + str(pp_v2[0]) + " Y" + str(pp_v2[1]) + " Z" + str(pp_v2[2]) + "\n")
@@ -198,7 +202,8 @@ def exportGcode():
 		nurbs = cmds.ls(type="nurbsCurve", visible=True)
 		selected = cmds.ls(type="mesh", visible=True)
 		cmds.currentTime(frame)
-		f.write("new frame \n")
+		f.write("M107 \n")
+		f.write("M106 \n")
 			
 		processMeshObjects(f, selected)	
 		processNurbs(f, nurbs)

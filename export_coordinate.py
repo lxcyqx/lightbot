@@ -54,7 +54,7 @@ def getPosition():
     x = request.args.get('x')
     y = request.args.get('y')
 
-    xyz = pixelToXYZ(float(x), float(y))
+    xyz = pixelToXYZ([float(x), float(y)])
     abc = XYZtoABC(xyz)
 
     # newX =float(x)/4 -50
@@ -63,13 +63,11 @@ def getPosition():
     newY = abc[1]
     newZ = abc[2]
 
-    if(-100 < newX and newX < 100):
-        if(-100 < newY and newY < 100):
-            line = "G0 X"+str(newX) + " Y" + str(newY) + " Z" + str(newZ) + "\n \r"
-            print(line)
-            byteString = line.encode('UTF-8')
-            printer.write(byteString)
-            print(printer.readline())
+    line = "G0 X"+str(newX) + " Y" + str(newY) + " Z" + str(newZ) + "\n \r"
+    print(line)
+    byteString = line.encode('UTF-8')
+    printer.write(byteString)
+    print(printer.readline())
     # Now here we get the position, put your control code below
     # 
     return ""

@@ -29,7 +29,7 @@ def pixelToXYZ(pixel_point):
     y = (canvas_height - (pixel_y * conversion_factor) - center_y)
     print( "pixel x = " + str(pixel_x) + "pixel y = " + str( pixel_y) )
     print( "real x = " + str(x) + "real y = " + str(y) )
-    return [x, y, 1200] # fixed z height
+    return [x, y, 1400] # fixed z height
 
 P1 = [-851.8, -512.3, 1803.5]
 P2 = [2.65, 985.3, 1803.5]

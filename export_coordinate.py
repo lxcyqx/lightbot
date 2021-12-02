@@ -65,7 +65,7 @@ def getPosition():
 
     if(-100 < newX and newX < 100):
         if(-100 < newY and newY < 100):
-            line = "G0 X"+str(newX) + " Y" + str(newY) + " Z" + str(newZ) \n \r"
+            line = "G0 X"+str(newX) + " Y" + str(newY) + " Z" + str(newZ) + "\n \r"
             print(line)
             byteString = line.encode('UTF-8')
             printer.write(byteString)

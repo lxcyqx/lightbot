@@ -23,11 +23,12 @@ def getPosition():
             print(printer.readline())
     # Now here we get the position, put your control code below
     # 
-    #return ""
+    return ""
 
 def main():
     app.run(host='0.0.0.0',port=5000)
     #printer.open() 
+    printer.write(b"G28 X Y Z")
     print(printer.is_open)
 
 

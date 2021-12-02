@@ -48,14 +48,16 @@ def XYZtoABC(point):
 
 while True:
     pixel_input = input() # get input from command line
-    pixel_input = re.findall(r'\d+\.\d+', pixel_input) # get numbers from string input
+    pixel_input = re.findall(r"[-+]?\d*\.\d+|\d+", pixel_input) # get numbers from string input
     for num in range(len(pixel_input)):
         pixel_input[num] = float(pixel_input[num])
-    xyz = pixelToXYZ(pixel_input)
-    abc = XYZtoABC(xyz)
+    
+    if (len(pixel_input) > 0):
+        xyz = pixelToXYZ(pixel_input)
+        abc = XYZtoABC(xyz)
 
-    f = open("/tmp/printer", "wb")
-    gcode_command = "G1 X{0} Y{1} Z{2}".format(abc[0], abc[1], abc[2])
-    print(gcode_command)
-    byteString = gcode_command.encode("UTF-8")
-    f.write(byteString)
+        f = open("/tmp/printer", "wb")
+        gcode_command = "G1 X{0} Y{1} Z{2}".format(abc[0], abc[1], abc[2])
+        print(gcode_command)
+        byteString = gcode_command.encode("UTF-8")
+        f.write(byteString)

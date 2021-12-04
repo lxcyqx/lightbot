@@ -2,11 +2,42 @@ from flask import Flask,request
 import sys
 import serial
 import math
+import numpy as np
+import re
+
+
+class Light:
+    """LightBal Movement Class abstracts control of the light"""
+   
+    numLEDS = 6     # number of leds in the light sphere    
+    targetPos = []  # real coordinate x,y,z position of the target point
+    isTarget = False    # state machine looks here to track hand
+                        #   or move smoothly in randomized pattern. 
+    
+    position = np.array([0,0,0])    # real coordinte x,y,z position of the light
+    velocity = np.array([0,0,0])
+    acceleration = np.array([0,0,0])
+
+    force = np.array([0,0,0])
+    mass = 1
+
+    def __init__(self):  
+        pass     
+    def getPosition(self):
+        pass
+    def setTarget(self, target):
+        pass
+    def update(self):
+        pass
+
+
+
+### BEGINNING OF PROGRAM ###
+
 app = Flask(__name__)
 printer = serial.Serial('/tmp/printer')
 
-import re
-
+# 
 # canvas is 640x480
 canvas_width = 640
 canvas_height = 480
@@ -92,6 +123,39 @@ def main():
     #printer.write(b"G28 X Y Z")
 
 
+
 if __name__ == "__main__":
     sys.exit(main())
+
+
+
+
+
+
+
+
+class Light:
+    """LightBal Movement Class abstracts control of the light"""
+   
+    numLEDS = 6     # number of leds in the light sphere    
+    targetPos = []  # real coordinate x,y,z position of the target point
+    isTarget = False    # state machine looks here to track hand
+                        #   or move smoothly in randomized pattern. 
+    
+    position = np.array([0,0,0])    # real coordinte x,y,z position of the light
+    velocity = np.array([0,0,0])
+    acceleration = np.array([0,0,0])
+
+    force = np.array([0,0,0])
+    mass = 1
+
+    def __init__(self):  
+        pass     
+    def getPosition(self):
+        pass
+    def setTarget(self, target):
+        pass
+    def update(self):
+        pass
+
 

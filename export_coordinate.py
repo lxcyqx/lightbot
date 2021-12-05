@@ -2,6 +2,8 @@ from flask import Flask,request
 import sys
 import serial
 import math
+import time 
+
 app = Flask(__name__)
 printer = serial.Serial('/tmp/printer')
 
@@ -17,10 +19,10 @@ def pixelToXYZ(pixel_point):
     x = pixel_point[0]
     y = pixel_point[1]
 
-    x = x * conversion_factor + top_left_x
-    y = y * conversion_factor + top_left_y
+    x = -1 * x * conversion_factor + top_left_x
+    y = -1 * y * conversion_factor + top_left_y
 
-    return [x, y, 1000] # fixed z height
+    return [x, y, 1500] # fixed z height
 
 P1 = [-851.8, -512.3, 1803.5]
 P2 = [2.65, 985.3, 1803.5]
@@ -49,10 +51,31 @@ def XYZtoABC(point):
     C = getEuclideanDistance(P3, point) - c0
     return [A, B, C]
 
+def preprogrammedMove():
+    # TODO: return list of points
+    # generate curve in maya and then read from the txt file that is generated from other python script
+    pass
+
 @app.route('/position',methods=['GET'])
 def getPosition():
+    start = timer()
+    end = timer()
+    begin_x = request.args.get('x')
+    begin_y = request.args.get('y')
+
     x = request.args.get('x')
     y = request.args.get('y')
+
+    while (end - start < .1): #wait for elapsed time of 5 seconds
+        end = timer()
+        x = request.args.get('x')
+        y = request.args.get('y')
+    
+    # if 10 seconds has passed and no new point, go to preprogrammed move
+    if (end - start >= 10 and begin_x==x and begin_y==y):
+        points = preprogrammedMove()
+        #TODO: process the points
+
 
     xyz = pixelToXYZ([float(x), float(y)])
     abc = XYZtoABC(xyz)

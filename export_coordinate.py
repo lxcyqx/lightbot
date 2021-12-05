@@ -5,40 +5,63 @@ import math
 import numpy as np
 import re
 import colorsys
+from tkinter import *
+from time import perf_counter
+from threading import Thread
+
 
 class Light:
-    """LightBal Movement Class abstracts control of the light"""
+    """
+    LightBal Movement Class abstracts control of the light
+    """
     printer = None
     numLEDS = 6     # number of leds in the light sphere    
-    maxRadius = 200
+    maxRadius = 300
+    # Pulley points defined in 3D space: (mm)
     P1 = [-851.8, -512.3, 1803.5]
     P2 = [2.65, 985.3, 1803.5]
     P3 = [862.7, -512.3, 1803.5]
     home = [0, 0, 1575] # in cartesian coordinates
-
+    # cable length offsets. Length of cables when light is at home positoin.
+    a0, b0, c0 = 0, 0, 0
     isTargetSet = False    # Makes sure robot does not move until target it set.
     targetPosition = np.array([0,0,0])  # real coordinate x,y,z position of target
     position = np.array([0,0,0])    # real coordinte x,y,z position of the light
     velocity = np.array([0,0,0])
     acceleration = np.array([0,0,0])
-    
-    polarPosition = [0,0,0]
-    RGB = [0,0,0]
-
-    force = np.array([0,0,0])
+    # Force and mass used in "P Controller" motion smoothing. F=Ma 
+    force = np.array([-2,0,0])
     mass = 1
+    # Color and Sound defined in polar coordinates. 
+    polarPosition = [0,0,0] # [ Radius, Angle(degrees), Z_height]
+    RGB = [0,0,0] # [R, G, B] values defined from 0 to 1
+
 
     def __init__(self,newPrinter):
         self.printer = newPrinter
+        self.setHomeInFrameCoordinates()
+
+        
+    def setHomeInFrameCoordinates(self):
+        # Calculate lengs of cables when light is at the home position. Used to offset motion commands
+        #   as part of the kinematics implementation.
+        self.a0 = self.getEuclideanDistance(self.home, self.P1)
+        self.b0 = self.getEuclideanDistance(self.home, self.P2)
+        self.c0 = self.getEuclideanDistance(self.home, self.P3)
+
 
     def getPosition(self):
+        # Allows other parts of the program to get light's current position (not target pos)
         return [this.position[0] ,this.position[1], this.position[2]]
-        print("DEBUG: getPosition called")
+
 
     def setTarget(self, target):
+        # Set target for light to go worards. This is how other parts of the program assign new positions 
+        #   to the light. Implements "P controller" for motion smoothing.
         for i in range(len(target)):
             self.targetPosition[i] = target[i]
-            self.isTargetSet = True
+        self.isTargetSet = True
+
 
     def getEuclideanDistance(self, p1, p2):
         # convert strings to float
@@ -46,32 +69,30 @@ class Light:
             p1[i] = float(p1[i])
         for i in range(len(p2)):
             p2[i] = float(p2[i])
+        # find euclidean distance 
         return math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2 + (p2[2]-p1[2])**2)
 
-    def getHomeInFrameCoordinates(self):
-        a0 = self.getEuclideanDistance(self.home, self.P1)
-        b0 = self.getEuclideanDistance(self.home, self.P2)
-        c0 = self.getEuclideanDistance(self.home, self.P3)
-        return a0, b0, c0
-    
+
     # Cartesian coordinates to lightbot coordinates
     def XYZtoABC(self, point):
-        a0, b0, c0 = self.getHomeInFrameCoordinates()
-        A = self.getEuclideanDistance(self.P1, point) - a0
-        B = self.getEuclideanDistance(self.P2, point) - b0
-        C = self.getEuclideanDistance(self.P3, point) - c0
+        # a0, b0, c0 = self.getHomeInFrameCoordinates()
+        A = self.getEuclideanDistance(self.P1, point) - self.a0
+        B = self.getEuclideanDistance(self.P2, point) - self.b0
+        C = self.getEuclideanDistance(self.P3, point) - self.c0
         return [A, B, C]
 
+    # Calculate cylindrical R,Th,Z coordinate from XYZ coordinates
     def XYZtoPolar(self, point):
         X = point[0]
         Y = point[1]
         Z = point[2]
-        print("X: "+str(X)+"Y: "+str(Y))
+        #print("X: "+str(X)+"Y: "+str(Y))
         R = math.sqrt(X**2 + Y**2)
         Th = math.degrees(math.atan2(Y,X))
         print("Radius: " + str(R) + " Angle: "+ str(Th))
         return [R,Th,Z]
     
+
     # Error checking if the targt point is in bounds 
     def checkIsValid(self, point):
         Z = self.targetPosition[2]
@@ -96,7 +117,6 @@ class Light:
         if(0<=S and S<= 1):
             if(0<=H and H<=1):
                 RGB = colorsys.hsv_to_rgb(H,S,V)
-
         return list(RGB)
 
 
@@ -104,16 +124,18 @@ class Light:
     #   color of the LED. This is how the light is anamated.
     def update(self):
         if (self.isTargetSet and self.checkIsValid(self.targetPosition) ):
-            newX = self.targetPosition[0]
-            newY = self.targetPosition[1]
-            newZ = self.targetPosition[2]
-            line = "G0 X"+str(newX) + " Y" + str(newY) + " Z" + str(newZ) + "\n \r"
+            ABC = self.XYZtoABC(self.targetPosition)
+
+            #newX = self.targetPosition[0]
+            #newY = self.targetPosition[1]
+            #newZ = self.targetPosition[2]
+            line = "G0 X"+str(ABC[0]) + " Y" + str(ABC[1]) + " Z" + str(ABC[2]) + "\n \r"
             #print(line)
             byteString = line.encode('UTF-8')
             self.printer.write(byteString)
             
             self.polarPosition = self.XYZtoPolar(self.targetPosition)
-            RGB=self.PointToRGB(self.polarPosition)
+            RGB=self.PointToRGB(self.targetPosition)
             
             colorGCode="SET_LED LED=light RED="+str(RGB[0])+" GREEN="+str(RGB[1])+" BLUE="+str(RGB[2])+" \n \r"
             
@@ -122,48 +144,87 @@ class Light:
             self.printer.write(byteString)
     
 
-### BEGINNING OF MAIN PROGRAM ###
 
+"""
+### LightBot class: visualization and smooth timing ###
+
+"""
+class LightBot:
+    
+    def __init__(self,light):
+        self.root = Tk()
+        self.root.geometry("660x500")
+        self.root.config(bg="white")
+
+        self.canvas_frame = Frame(root)
+        self.canvas_frame.pack(side = TOP)
+        self.canvas = Canvas(self.canvas_frame, width=640, height=480, bg="grey")
+        self.canvas.pack()
+
+        self.button_frame = Frame(root)
+        self.button_frame.pack(side = BOTTOM)
+
+        self.start_button = Button(self.button_frame, text="START")
+        self.start_button.pack(side=LEFT)
+        self.pause_button = Button(self.button_frame, text="PAUSE") 
+        self.pause_button.pack( side=LEFT)
+        self.stop_button = Button(self.button_frame, text="STOP")
+        self.stop_button.pack( side=LEFT)
+
+    
+    def run(self):
+        self.root.mainloop()
+    
+    def set_pixel_target(self, pixel_x, pixel_y):
+        self.draw_circle(pixel_x, pixel_y, 10, "blue")
+
+    def draw_circle(self, x, y, radius, color):
+        x0=x-radius
+        x1=x+radius
+        y0=y-radius
+        y1=y+radius
+        id = self.canvas.create_oval(x0,y0,x1,y1, fill=color)
+        return id
+
+
+
+"""
+### BEGINNING OF MAIN PROGRAM ###
+"""
 app = Flask(__name__)
 printer = serial.Serial('/tmp/printer')
+
+
+# Light ball object, capable of moving around and changing color
 light = Light(printer)
+
+# LightBot, top level object anamates scene and does high level calculations
+#t=Thread(target=
+#lightBot = LightBot(light)
+#lightBot.run()
 
 # canvas is 640x480
 canvas_width = 640
 canvas_height = 480
-
 conversion_factor = 1 # mm/pixel
 
 # center of camera canvas is aligned with pysical Z axis
-center_x = (canvas_width/2) * conversion_factor
-center_y = (canvas_height/2) * conversion_factor
+center_x = canvas_width/2 
+center_y = canvas_height/2 
+
 
 # x, y pixel coordinates to x, y, z cartesian coordinate
 def pixelToXYZ(pixel_point):
-    pixel_x = pixel_point[0]
-    pixel_y = pixel_point[1]
-
-    x = (canvas_width - ( pixel_x * conversion_factor) - center_x)
-    y = (canvas_height - (pixel_y * conversion_factor) - center_y)
-    #print( "pixel x = " + str(pixel_x) + "pixel y = " + str( pixel_y) )
+    pixel_x = math.floor(pixel_point[0])
+    pixel_y = math.floor(pixel_point[1])
+    #print("Pixel X: "+str(pixel_x)+" Pixel Y: "+str(pixel_y))
+    pixel_x_adj = -1* ( pixel_x - center_x)
+    pixel_y_adj = -1* (pixel_y - center_y)
+    x = pixel_x_adj * conversion_factor
+    y = pixel_y_adj * conversion_factor
+    #print( "Real x = " + str(x) + "real y = " + str(y) )
     return [x, y, 1400] # fixed z height
 
-
-"""
-def getHomeInFrameCoordinates():
-    a0 = getEuclideanDistance(home, P1)
-    b0 = getEuclideanDistance(home, P2)
-    c0 = getEuclideanDistance(home, P3)
-    return a0, b0, c0
-
-def getEuclideanDistance(p1, p2):
-    # convert strings to float
-    for i in range(len(p1)):
-        p1[i] = float(p1[i])
-    for i in range(len(p2)):
-        p2[i] = float(p2[i])
-    return math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2 + (p2[2]-p1[2])**2)
-"""
 
 # This function is called every frame of the handtrack.js script 
 # Handtrack.js passes the target pixel x,y coordinate of the tracked hand (or hands)
@@ -176,37 +237,20 @@ def getPosition():
 
     xyz = pixelToXYZ([float(x), float(y)])
     abc = light.XYZtoABC(xyz)
+    #lightBot.set_pixel_target(float(x), float(y))
 
-    newX = abc[0]
-    newY = abc[1]
-    newZ = abc[2]
+   # newX = abc[0]
+   # newY = abc[1]
+   # newZ = abc[2]
 
-    light.setTarget([ newX, newY, newZ])
+    light.setTarget([ xyz[0], xyz[1], xyz[2]])
     light.update()
     return ""
-"""
-    line = "G0 X"+str(newX) + " Y" + str(newY) + " Z" + str(newZ) + "\n \r"
-    is_valid = False
-    if( -300 < newX and newX < 300):
-        if( -300 < newY and newY < 300):
-            if( -300 < newZ and newZ < 300):
-                is_valid = True
-    
-    print(line)
-    byteString = line.encode('UTF-8')
-    if( is_valid):
-        printer.write(byteString)
-    #print(printer.readline())
-    # Now here we get the position, put your control code below
-    #
 
-"""
-    
 
 def main():
     app.run(host='0.0.0.0',port=5000)
     #printer.write(b"G28 X Y Z")
-
 
 
 if __name__ == "__main__":

@@ -95,8 +95,11 @@ def pixelToXYZ(pixel_point):
 
 def preprogrammedMove():
     # TODO: return list of points
-    # generate curve in maya and then read from the txt file that is generated from other python script
+    # random points
     pass
+
+start = time()
+end = time()
 
 # This function is called every frame of the handtrack.js script 
 # Handtrack.js passes the target pixel x,y coordinate of the tracked hand (or hands)
@@ -104,16 +107,16 @@ def preprogrammedMove():
 # sets the new targetPosition of the light object.
 @app.route('/position',methods=['GET'])
 def getPosition():
-    start = timer()
-    end = timer()
+    start = time()
+    end = time()
     begin_x = request.args.get('x')
     begin_y = request.args.get('y')
 
     x = request.args.get('x')
     y = request.args.get('y')
 
-    while (end - start < .1): #wait for elapsed time of 5 seconds
-        end = timer()
+    while (end - start < .1): #wait for elapsed time of .1 seconds
+        end = time()
         x = request.args.get('x')
         y = request.args.get('y')
     
@@ -124,12 +127,6 @@ def getPosition():
 
 
     xyz = pixelToXYZ([float(x), float(y)])
-    abc = light.XYZtoABC(xyz)
-    #lightBot.set_pixel_target(float(x), float(y))
-
-   # newX = abc[0]
-   # newY = abc[1]
-   # newZ = abc[2]
 
     light.setTarget([ xyz[0], xyz[1], xyz[2]])
     light.update()
@@ -139,6 +136,10 @@ def getPosition():
 def main():
     app.run(host='0.0.0.0',port=5000)
     #printer.write(b"G28 X Y Z")
+    start = time()
+    end = time()
+    print("start time ", start)
+    print("end time ", end)
 
 
 if __name__ == "__main__":

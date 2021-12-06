@@ -124,11 +124,11 @@ def getPosition():
         points = preprogrammedMove()
         #TODO: process the points
 
-
     xyz = pixelToXYZ([float(x), float(y)])
 
     light.setTarget([ xyz[0], xyz[1], xyz[2]])
     light.update()
+    start = time.time()
     return ""
 
 

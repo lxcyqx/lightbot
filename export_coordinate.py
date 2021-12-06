@@ -116,7 +116,6 @@ def getPosition():
     y = request.args.get('y')
 
     while (end - start < 1): #wait for elapsed time of .1 seconds
-        global end
         end = time.time()
         x = request.args.get('x')
         y = request.args.get('y')

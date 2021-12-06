@@ -107,7 +107,6 @@ end = time.time()
 # sets the new targetPosition of the light object.
 @app.route('/position',methods=['GET'])
 def getPosition():
-    start = time.time()
     end = time.time()
     begin_x = request.args.get('x')
     begin_y = request.args.get('y')
@@ -115,7 +114,7 @@ def getPosition():
     x = request.args.get('x')
     y = request.args.get('y')
 
-    while (end - start < .1): #wait for elapsed time of .1 seconds
+    while (end - start < 1): #wait for elapsed time of .1 seconds
         end = time.time()
         x = request.args.get('x')
         y = request.args.get('y')

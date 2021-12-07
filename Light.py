@@ -5,9 +5,6 @@ import math
 import numpy as np
 import re
 import colorsys
-from tkinter import *
-from time import perf_counter
-from threading import Thread
 
 class Light:
     """
@@ -24,17 +21,18 @@ class Light:
     # cable length offsets. Length of cables when light is at home positoin.
     a0, b0, c0 = 0, 0, 0
     isTargetSet = False    # Makes sure robot does not move until target it set.
-    targetPosition = np.array([0,0,0])  # real coordinate x,y,z position of target
-    position = np.array([0,0,0])    # real coordinte x,y,z position of the light
+    targetPosition = np.array([0,0,1400])  # real coordinate x,y,z position of target
+    position = np.array([0,0,1400])    # real coordinte x,y,z position of the light
     velocity = np.array([0,0,0])
     acceleration = np.array([0,0,0])
+    time_step = 0.05
     # Force and mass used in "P Controller" motion smoothing. F=Ma 
     force = np.array([-2,0,0])
-    mass = 1
+    mass = .5
     # Color and Sound defined in polar coordinates. 
     polarPosition = [0,0,0] # [ Radius, Angle(degrees), Z_height]
     RGB = [0,0,0] # [R, G, B] values defined from 0 to 1
-
+    
 
     def __init__(self,newPrinter):
         self.printer = newPrinter
@@ -119,12 +117,26 @@ class Light:
         return list(RGB)
 
 
+    # A force is used to move the light sphere towares the target position smoothly
+    def update_position(self):
+        # Force is directly proportional to distance, and lies along the vector from 
+        #   light position to target position
+        # F=ma ; F/m = a
+        self.force = self.targetPosition - self.position
+        self.acceleration = self.force/self.mass
+        self.velocity = self.acceleration*self.time_step
+        self.position = self.position + self.velocity*self.time_step
+        return self.position
+
+
     # Update is called several times a second to trigger the new position and 
     #   color of the LED. This is how the light is anamated.
     def update(self):
         if (self.isTargetSet and self.checkIsValid(self.targetPosition) ):
-            ABC = self.XYZtoABC(self.targetPosition)
-
+            
+            self.update_position() 
+            
+            ABC = self.XYZtoABC(self.position)
             #newX = self.targetPosition[0]
             #newY = self.targetPosition[1]
             #newZ = self.targetPosition[2]

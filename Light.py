@@ -153,7 +153,7 @@ class Light:
             ABC = self.XYZtoABC(self.position)
             # print("position----------" + str(self.position))
             # print("speed-------------" + str(self.speed))
-            line = "G0 X"+str(ABC[0]) + " Y" + str(ABC[1]) + " Z" + str(ABC[2]) + " F" + str(self.speed) + "\n \r"
+            line = "G0 X"+str(ABC[0]) + " Y" + str(ABC[1]) + " Z" + str(ABC[2]) + " F1000 \n \r"
             byteString = line.encode('UTF-8')
             self.printer.write(byteString)
             

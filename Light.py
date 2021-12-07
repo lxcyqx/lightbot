@@ -149,8 +149,8 @@ class Light:
             self.update_position() 
             
             ABC = self.XYZtoABC(self.position)
-            print("position----------" + self.position)
-            print("speed-------------" + self.speed)
+            # print("position----------" + str(self.position))
+            # print("speed-------------" + str(self.speed))
             line = "G0 X"+str(ABC[0]) + " Y" + str(ABC[1]) + " Z" + str(ABC[2]) + " F" + str(self.speed) + "\n \r"
             byteString = line.encode('UTF-8')
             self.printer.write(byteString)

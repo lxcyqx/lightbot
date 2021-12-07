@@ -25,7 +25,7 @@ class Light:
     position = np.array([0,0,1400])    # real coordinte x,y,z position of the light
     velocity = np.array([0,0,0])
     acceleration = np.array([0,0,0])
-    speed = 0
+    speed = 1
     time_step = 0.05
     # Force and mass used in "P Controller" motion smoothing. F=Ma 
     force = np.array([-2,0,0])

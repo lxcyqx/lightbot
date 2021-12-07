@@ -131,7 +131,6 @@ class Light:
         self.velocity = self.velocity * self.k_d + self.acceleration * self.time_step
         self.speed = ((self.velocity ** 2).sum()) ** 0.5 * 60
         self.position = self.position + self.velocity * self.time_step
-        return self.position
 
     def set_mode(self, mode):
         if(mode == "smooth"):
@@ -150,6 +149,8 @@ class Light:
             self.update_position() 
             
             ABC = self.XYZtoABC(self.position)
+            print("position----------" + self.position)
+            print("speed-------------" + self.speed)
             line = "G0 X"+str(ABC[0]) + " Y" + str(ABC[1]) + " Z" + str(ABC[2]) + " F" + str(self.speed) + "\n \r"
             byteString = line.encode('UTF-8')
             self.printer.write(byteString)

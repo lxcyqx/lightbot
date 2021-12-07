@@ -144,7 +144,9 @@ class Light:
     # Update is called several times a second to trigger the new position and 
     #   color of the LED. This is how the light is anamated.
     def update(self):
+        print("in update-------")
         if (self.isTargetSet and self.checkIsValid(self.targetPosition) ):
+            print("in update if statement-------")
             
             self.update_position() 
             

@@ -98,33 +98,17 @@ def preprogrammedMove():
     # random points
     pass
 
-# start = time.time()
-# end = time.time()
-
 # This function is called every frame of the handtrack.js script 
 # Handtrack.js passes the target pixel x,y coordinate of the tracked hand (or hands)
 # getPosition() calculates the X,Y,Z location from the pixel x,y location and  
 # sets the new targetPosition of the light object.
 @app.route('/position',methods=['GET'])
 def getPosition():
-    # end = time.time()
     begin_x = request.args.get('x')
     begin_y = request.args.get('y')
 
     x = request.args.get('x')
     y = request.args.get('y')
-
-    # while (end - start < 1): #wait for elapsed time of .1 seconds
-    #     end = time.time()
-    #     x = request.args.get('x')
-    #     y = request.args.get('y')
-    #     print("x coord ---------- ", x)
-    #     print("y coord ---------- ", y)
-    
-    # if 10 seconds has passed and no new point, go to preprogrammed move
-    # if (end - start >= 10 and begin_x==x and begin_y==y):
-    #     points = preprogrammedMove()
-    #     #TODO: process the points
 
     xyz = pixelToXYZ([float(x), float(y)])
 
@@ -136,12 +120,6 @@ def getPosition():
 
 def main():
     app.run(host='0.0.0.0',port=5000)
-    #printer.write(b"G28 X Y Z")
-    # start = time.time()
-    # end = time.time()
-    # print("start time ", start)
-    # print("end time ", end)
-
 
 if __name__ == "__main__":
     sys.exit(main())

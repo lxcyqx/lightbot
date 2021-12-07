@@ -25,6 +25,7 @@ class Light:
     position = np.array([0,0,1400])    # real coordinte x,y,z position of the light
     velocity = np.array([0,0,0])
     acceleration = np.array([0,0,0])
+    speed = 0
     time_step = 0.05
     # Force and mass used in "P Controller" motion smoothing. F=Ma 
     force = np.array([-2,0,0])
@@ -32,6 +33,9 @@ class Light:
     # Color and Sound defined in polar coordinates. 
     polarPosition = [0,0,0] # [ Radius, Angle(degrees), Z_height]
     RGB = [0,0,0] # [R, G, B] values defined from 0 to 1
+
+    k_p = 0
+    k_d = 0
     
 
     def __init__(self,newPrinter):
@@ -123,10 +127,19 @@ class Light:
         #   light position to target position
         # F=ma ; F/m = a
         self.force = self.targetPosition - self.position
-        self.acceleration = self.force/self.mass
-        self.velocity = self.acceleration*self.time_step
-        self.position = self.position + self.velocity*self.time_step
+        self.acceleration = self.force * self.k_p
+        self.velocity = self.velocity * self.k_d + self.acceleration * self.time_step
+        self.speed = ((self.velocity ** 2).sum()) ** 0.5 * 60
+        self.position = self.position + self.velocity * self.time_step
         return self.position
+
+    def set_mode(self, mode):
+        if(mode == "smooth"):
+            self.k_p = .5
+            self.k_d = 0.975
+        elif(mode == "responsive"):
+            self.k_p = 50
+            self.k_d = .60
 
 
     # Update is called several times a second to trigger the new position and 
@@ -137,11 +150,7 @@ class Light:
             self.update_position() 
             
             ABC = self.XYZtoABC(self.position)
-            #newX = self.targetPosition[0]
-            #newY = self.targetPosition[1]
-            #newZ = self.targetPosition[2]
-            line = "G0 X"+str(ABC[0]) + " Y" + str(ABC[1]) + " Z" + str(ABC[2]) + "\n \r"
-            #print(line)
+            line = "G0 X"+str(ABC[0]) + " Y" + str(ABC[1]) + " Z" + str(ABC[2]) + " F" + str(self.speed) + "\n \r"
             byteString = line.encode('UTF-8')
             self.printer.write(byteString)
             
@@ -150,6 +159,5 @@ class Light:
             
             colorGCode="SET_LED LED=light RED="+str(RGB[0])+" GREEN="+str(RGB[1])+" BLUE="+str(RGB[2])+" \n \r"
             
-            #print(colorGCode)
             byteString = colorGCode.encode('UTF-8')
             self.printer.write(byteString)

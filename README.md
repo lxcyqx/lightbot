@@ -10,5 +10,5 @@ Scripts used for cable driven robot that allows for real-time control and premad
 
 [Final Presentation.pdf](https://github.com/lxcyqx/lightbot/files/7698020/Final.Presentation.pdf)
 
-https://user-images.githubusercontent.com/29609837/145697772-524a072f-ac6a-48ea-8ea5-c1638831ccfb.MOV
+https://user-images.githubusercontent.com/29609837/145697840-a39094b0-9e81-458f-8058-23f8a2cb49c7.mp4
 
